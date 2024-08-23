@@ -1,86 +1,140 @@
 import time
-import requests
-from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from time import sleep
 from urllib.parse import urljoin
-import requests
 from bs4 import BeautifulSoup
+import json
 
-# abrir o navegador
+# Configurações do Selenium
 service = Service()
 options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(service=service, options=options)
 
+# Iniciando uma colecao apenas para armazenar todos os filmes iterados
+filmes = []
+
+# Iniciando os atributos que sao colecoes
+
 # URL da página de filmes em lançamento
 url = 'https://www.imdb.com/calendar/?ref_=nv_mv_cal'
+driver.get(url)
 
-# Adicionando esse cabeçalho para que seja possível acessar a página do IMDB
-headers = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-}
+# Espera para garantir que a página carregue completamente (ajuste conforme necessário)
+time.sleep(5)
 
-response = requests.get(url, headers=headers)
-soup = BeautifulSoup(response.content, 'html.parser')
+# Extraindo o HTML carregado pelo Selenium
+html_content = driver.page_source
+soup = BeautifulSoup(html_content, 'html.parser')
 
-# Acessando o html da página
-html_content = soup.text
-
-# Acesasndo a parte da página que possui todos os filmes
+# Acessando a parte da página que possui todos os filmes
 lista_filmes = soup.find(class_='ipc-page-section ipc-page-section--base')
-print("Esse é o trecho do HTML da lista de filmes:")
-print(lista_filmes.prettify())
 
-# Retorna uma lista com todos os filmes que existem dentro do componente supracitado
-todos_filmes = lista_filmes.find_all(class_='ipc-metadata-list-summary-item ipc-metadata-list-summary-item--click sc-8c2b7f1f-0 dKSSmX');
+# Verificando se a lista de filmes foi encontrada
+if lista_filmes:
+    todos_filmes = lista_filmes.find_all(class_='ipc-metadata-list-summary-item ipc-metadata-list-summary-item--click sc-8c2b7f1f-0 dKSSmX')
+    i = 0
+    for elemento in todos_filmes:
+        generos = []
+        elenco = []
 
-# Printa cada elemento da lista de filmes (printando junto com um contador apenas para confirmar o número de filmes)
-# Título, Data de Lançamento, Gênero(s) e o link para página da série.
-i = 0;
-for elemento in todos_filmes:
-    print(i)
-    i = i + 1
+        print(i)
+        i += 1
 
-    # Acessando cada filme da lista
-    print(elemento)
+        # Acessando o nome de cada filme
+        elemento_do_filme = elemento.find(class_='ipc-metadata-list-summary-item__t')
 
-    # Necessário acessar o link desse elemento
-    elemento_do_filme = elemento.find(class_='ipc-metadata-list-summary-item__t',)
+        if elemento_do_filme:
 
-    # Acessando o nome do filme que é o elemento de texto da tag a (TITULO)
-    nome_do_filme = elemento_do_filme.get_text()
-    print(nome_do_filme)
+            # Acessando o nome do filme
+            nome_do_filme = elemento_do_filme.get_text()
+            print('Esse é o nome do filme')
+            print(nome_do_filme)
 
-    url_base = 'https://www.imdb.com/'
-    link_do_filme= elemento_do_filme['href']
-    link_completo = urljoin(url_base, link_do_filme)
+            print('Esses sao os generos do filme')
+            ul_generos = elemento.find(
+                class_='ipc-inline-list ipc-inline-list--show-dividers ipc-inline-list--no-wrap ipc-inline-list--inline ipc-metadata-list-summary-item__tl base')
 
-    print('Esse é o link da página do filme: ')
-    print(link_completo)
+            if ul_generos:
+                todos_generos = ul_generos.find_all('span')
 
-    print('Esse é o nome do filme, que é um botão e entra no link do filme (logo abaixo): ')
-    print(nome_do_filme)
-    # print('Esse é o link da página do filme: ')
-    # print(link_do_filme['href'])
-    driver.get(link_completo)
+                if todos_generos:
+                    for gen in todos_generos:
+                        genero = gen.get_text()
+                        generos.append(genero)
+                        print(gen.get_text())
 
-    print("Esse é o conteudo do HTML da página do filme respectivo")
-    response_dois = requests.get(link_completo, headers=headers)
-    soup_dois = BeautifulSoup(response_dois.content, 'html.parser')
-    html_page_filme = soup_dois.text
-    print(soup_dois.prettify())
-    informacoes_filme = soup_dois.find('h1', class_='sc-d8941411-0 dxeMrU')
-    print(informacoes_filme)
-    # print("Esse é o HTML da página:")
-    # print(html_page_filme)
-    sleep(15)
+            else:
+                print('Nao existe o campo de generos')
 
-    sleep(15)
+            # Acessando a URL do filme
+            url_base = 'https://www.imdb.com/'
+            link_do_filme = elemento_do_filme['href']
+            link_completo = urljoin(url_base, link_do_filme)
+            print('Esse é o link da página do filme: ')
+            print(link_completo)
 
-    # Criar um json com todos os dados
+            # Abrindo a página do filme
+            driver.get(link_completo)
+            # time.sleep(2)  # Ajuste o tempo conforme necessário
 
+            # Obtendo o HTML da página do filme
+            html_page_filme = driver.page_source
+            soup_dois = BeautifulSoup(html_page_filme, 'html.parser')
 
-# print(soup.prettify())
+            # Acessando o ano do filme
+            informacoes_filme = soup_dois.find_all('a', class_='ipc-link ipc-link--baseAlt ipc-link--inherit-color')
+            if len(informacoes_filme) > 4:
+                ano_filme = informacoes_filme[4].text
+                print('Esse é o ano do filme:')
+                print(ano_filme)
 
+            # Acessando a data de lançamento
+            data_lancamento = soup_dois.find('div', class_='sc-5766672e-2 bizeKj')
+            if data_lancamento:
+                print('Essa é a data de lançamento completa:')
+                print(data_lancamento.text)
+
+            # Acessando o elenco do filme
+            lista_elenco = soup_dois.find('div',
+                                          class_='ipc-shoveler ipc-shoveler--base ipc-shoveler--page0 title-cast__grid')
+
+            # Verifica se o elemento foi encontrado
+            if lista_elenco:
+                todas_tags_a = lista_elenco.find_all('a', class_='sc-bfec09a1-1 KeEFX')
+
+                if todas_tags_a:
+                    print('Essa é a div que contém todos os membros do elenco')
+                    print(lista_elenco.prettify())
+                    print('Essas sao todas as tags <a> da div')
+                    print(todas_tags_a)
+
+                    # Printando todas as tags que possuem nome de alguém do elenco
+                    for nome_ator in todas_tags_a:
+                        nome = nome_ator.text
+                        print(nome)
+                        elenco.append(nome)
+                else:
+                    print("Elemento de elenco não encontrado. Continuando a execução do código...")
+
+            filme = {
+                'nome': nome_do_filme,
+                'link_pagina': link_completo,
+                'elenco': elenco,
+                'generos': generos
+            }
+
+            print('Esses sao os atributos do objeto filme: ')
+            print(filme)
+
+            filmes.append(filme)
+            # time.sleep(3)
+            # driver.execute_script("arguments[0].scrollIntoView();", element)
+else:
+    print("Lista de filmes não encontrada")
+
+print(filmes)
+
+with open("filmes.json", "w") as arquivo_json:
+    json.dump(filmes, arquivo_json, indent=4)
+
+driver.quit()
