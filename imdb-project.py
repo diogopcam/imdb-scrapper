@@ -16,7 +16,7 @@ filmes = []
 # Iniciando os atributos que sao colecoes
 
 # URL da página de filmes em lançamento
-url = 'https://www.imdb.com/calendar/?ref_=nv_mv_cal'
+url = 'https://www.imdb.com/calendar/?ref_=nv_mv_cal&region=BR'
 driver.get(url)
 
 # Espera para garantir que a página carregue completamente (ajuste conforme necessário)
@@ -45,10 +45,8 @@ if lista_filmes:
 
         if elemento_do_filme:
 
-            # Acessando o nome do filme
-            nome_do_filme = elemento_do_filme.get_text()
-            print('Esse é o nome do filme')
-            print(nome_do_filme)
+            # # Acessando o nome do filme
+            # nome_do_filme = elemento_do_filme.get_text()
 
             print('Esses sao os generos do filme')
             ul_generos = elemento.find(
@@ -81,6 +79,12 @@ if lista_filmes:
             html_page_filme = driver.page_source
             soup_dois = BeautifulSoup(html_page_filme, 'html.parser')
 
+            nome_do_filme = soup_dois.find(class_='hero__primary-text')
+            nome_filme_txt = nome_do_filme.get_text()
+
+            print('Esse é o nome do filme')
+            print(nome_filme_txt)
+
             # Acessando o ano do filme
             informacoes_filme = soup_dois.find_all('a', class_='ipc-link ipc-link--baseAlt ipc-link--inherit-color')
             if len(informacoes_filme) > 4:
@@ -89,10 +93,12 @@ if lista_filmes:
                 print(ano_filme)
 
             # Acessando a data de lançamento
+            data_lancamento_txt = ""
             data_lancamento = soup_dois.find('div', class_='sc-5766672e-2 bizeKj')
             if data_lancamento:
                 print('Essa é a data de lançamento completa:')
-                print(data_lancamento.text)
+                data_lancamento_txt = data_lancamento.text
+                print(data_lancamento_txt)
 
             # Acessando o elenco do filme
             lista_elenco = soup_dois.find('div',
@@ -116,10 +122,18 @@ if lista_filmes:
                 else:
                     print("Elemento de elenco não encontrado. Continuando a execução do código...")
 
+            componente_listas = soup_dois.find_all(class_='ipc-metadata-list ipc-metadata-list--dividers-all title-pc-list ipc-metadata-list--baseAlt')
+            componente_diretor = componente_listas[1]
+            nome_diretor = componente_diretor.find(class_='ipc-metadata-list-item__list-content-item ipc-metadata-list-item__list-content-item--link')
+            print('Esse é o componente do diretor')
+            nome_diretor_txt = nome_diretor.get_text()
+
             filme = {
-                'nome': nome_do_filme,
+                'nome': nome_filme_txt,
                 'link_pagina': link_completo,
+                'lancamento': data_lancamento_txt,
                 'elenco': elenco,
+                'diretor': nome_diretor_txt,
                 'generos': generos
             }
 
@@ -127,8 +141,6 @@ if lista_filmes:
             print(filme)
 
             filmes.append(filme)
-            # time.sleep(3)
-            # driver.execute_script("arguments[0].scrollIntoView();", element)
 else:
     print("Lista de filmes não encontrada")
 
