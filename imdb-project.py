@@ -13,8 +13,6 @@ driver = webdriver.Chrome(service=service, options=options)
 # Iniciando uma colecao apenas para armazenar todos os filmes iterados
 filmes = []
 
-# Iniciando os atributos que sao colecoes
-
 # URL da página de filmes em lançamento
 url = 'https://www.imdb.com/calendar/?ref_=nv_mv_cal&region=BR'
 driver.get(url)
@@ -40,13 +38,11 @@ if lista_filmes:
         print(i)
         i += 1
 
-        # Acessando o nome de cada filme
+        # Acessando o elemento de cada filme
         elemento_do_filme = elemento.find(class_='ipc-metadata-list-summary-item__t')
 
         if elemento_do_filme:
 
-            # # Acessando o nome do filme
-            # nome_do_filme = elemento_do_filme.get_text()
 
             print('Esses sao os generos do filme')
             ul_generos = elemento.find(
@@ -73,7 +69,6 @@ if lista_filmes:
 
             # Abrindo a página do filme
             driver.get(link_completo)
-            # time.sleep(2)  # Ajuste o tempo conforme necessário
 
             # Obtendo o HTML da página do filme
             html_page_filme = driver.page_source
@@ -92,13 +87,31 @@ if lista_filmes:
                 print('Esse é o ano do filme:')
                 print(ano_filme)
 
-            # Acessando a data de lançamento
-            data_lancamento_txt = ""
-            data_lancamento = soup_dois.find('div', class_='sc-5766672e-2 bizeKj')
-            if data_lancamento:
-                print('Essa é a data de lançamento completa:')
-                data_lancamento_txt = data_lancamento.text
-                print(data_lancamento_txt)
+            elemento = soup_dois.find(attrs={"data-testid": "Details"})
+            print("Esse é o elemento que possui putra data de lancamento")
+            print(elemento)
+
+            classe_especifica = elemento.find(class_="ipc-metadata-list ipc-metadata-list--dividers-all ipc-metadata-list--base")
+            print("Essa é a classe procurada")
+            print(classe_especifica)
+
+            li_especifico = classe_especifica.find("li",
+                                                   class_="ipc-metadata-list__item ipc-metadata-list-item--link")
+            print("Essa é a LI procurada")
+            print(li_especifico)
+
+            # Encontrar o <div> com a classe específica dentro do <li>
+            div_especifico = li_especifico.find("div", class_="ipc-metadata-list-item__content-container")
+
+            # Encontrar o <a> dentro do <div>
+            a_especifico = div_especifico.find("a",
+                                               class_="ipc-metadata-list-item__list-content-item ipc-metadata-list-item__list-content-item--link")
+
+            # Extrair e imprimir o texto do <a>
+            informacao_lancamento = a_especifico.get_text(strip=True)
+            print("Essa é a informacao completa")
+            print(informacao_lancamento)
+            data_lancamento_txt = informacao_lancamento
 
             # Acessando o elenco do filme
             lista_elenco = soup_dois.find('div',
@@ -110,9 +123,9 @@ if lista_filmes:
 
                 if todas_tags_a:
                     print('Essa é a div que contém todos os membros do elenco')
-                    print(lista_elenco.prettify())
+                    # print(lista_elenco.prettify())
                     print('Essas sao todas as tags <a> da div')
-                    print(todas_tags_a)
+                    # print(todas_tags_a)
 
                     # Printando todas as tags que possuem nome de alguém do elenco
                     for nome_ator in todas_tags_a:
